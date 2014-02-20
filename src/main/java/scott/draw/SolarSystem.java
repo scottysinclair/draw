@@ -18,7 +18,7 @@ import java.util.*;
 
 import javax.swing.JFrame;
 
-public class Gradient {
+public class SolarSystem {
 
 
  
