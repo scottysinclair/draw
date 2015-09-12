@@ -31,21 +31,21 @@ public static void main(String args[]) {
 
 	  double maxMagnitude = 0d;
 
-	//  double speedOfEarthInKmpHour = 101765.855555;
-	  double speedOfEarthInKmpHour = 0;
+	  double speedOfEarthInKmpHour = 101765.855555;
+	//  double speedOfEarthInKmpHour = 0;
       double speedOfEarthMetersPerSec = ((speedOfEarthInKmpHour * 1000) * 30f);
 
       //double speedOfMoonInKmpHour = speedOfEarthInKmpHour;
 	  double speedOfMoonInKmpHour = speedOfEarthInKmpHour + (3683);
       double speedOfMoonInMetersPerSec = ((speedOfMoonInKmpHour * 1000) * 30f);
 
-     // long distanceFromSunm = 149600000L * 1000L;
-      long distanceFromSunm = 0L;
+      long distanceFromSunm = 149600000L * 1000L;
+     // long distanceFromSunm = 0L;
       long distanceFromMoonToEarth = 384400 * 1000L;
-//      long distanceFromMoonToEarth = (long)(distanceFromSunm / 1.5525555e3);
       long distanceFromMoonToSun = distanceFromSunm + distanceFromMoonToEarth;
 
-      final double scale = height / (distanceFromMoonToEarth * 3.0); 
+      //final double scale = height / (distanceFromMoonToEarth * 3.0); 
+      final double scale = height / (distanceFromSunm * 3.0);
 
      WindowControl wc = new WindowControl(width, height);
    
@@ -58,7 +58,7 @@ public static void main(String args[]) {
         Map<String,Dot> dots = new HashMap<String,SolarSystem.Dot>();
         List<MObject> world = new LinkedList<MObject>();
         MObject sun = new MObject("Sun", Color.YELLOW, 10, 1.9891e30, new Vector(0f, 0f), new Vector(0f, 0f)); 
-  //      world.add(sun);
+        world.add(sun);
         MObject earth = new MObject("earth",
 					Color.BLUE, 
 					10, 
@@ -84,7 +84,7 @@ public static void main(String args[]) {
 //					new Vector(-distanceFromSunm, 0f));  
 //          world.add(mars);
 
-          int drawEvery = 1;
+          int drawEvery = 100;
           long countLoop = 0;
           long countOrbit = 0;
           boolean belowSun = true;
