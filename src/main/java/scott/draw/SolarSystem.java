@@ -30,12 +30,21 @@ public static void main(String args[]) {
 
 
 	  double maxMagnitude = 0d;
-      long speedOfEarthInKmpHour = 105000;
+
+	  double speedOfEarthInKmpHour = 101765.855555;
+	  //double speedOfEarthInKmpHour = 0;
       double speedOfEarthMetersPerSec = ((speedOfEarthInKmpHour * 1000) * 30f);
 
-      long distanceFromSunm = 149600000L * 1000L;
+      //double speedOfMoonInKmpHour = speedOfEarthInKmpHour;
+	  double speedOfMoonInKmpHour = speedOfEarthInKmpHour + (speedOfEarthInKmpHour / 374f); //36407766.990291262);
+      double speedOfMoonInMetersPerSec = ((speedOfMoonInKmpHour * 1000) * 30f);
 
-      final double scale = height / (distanceFromSunm * 5.3); 
+      long distanceFromSunm = 149600000L * 1000L;
+      //long distanceFromSunm = 1L;
+      long distanceFromMoonToEarth = 384400 * 1000L;
+      long distanceFromMoonToSun = distanceFromSunm + distanceFromMoonToEarth;
+
+      final double scale = height / (distanceFromSunm * 3.0); 
 
      WindowControl wc = new WindowControl(width, height);
    
@@ -43,7 +52,7 @@ public static void main(String args[]) {
 
 			try {
 
-        float dTime = 1f / 10000f; 
+        float dTime = 1f / 1000f; 
 
         Map<String,Dot> dots = new HashMap<String,SolarSystem.Dot>();
         List<MObject> world = new LinkedList<MObject>();
@@ -57,6 +66,15 @@ public static void main(String args[]) {
 					new Vector(distanceFromSunm, 0f)); //fully to the right 
           world.add(earth);
 
+          MObject moon = new MObject("moon",
+  					Color.WHITE, 
+  					5, 
+  					7.34767309e22, 
+  					new Vector(0f, speedOfMoonInMetersPerSec), //going fully up or down (at 90 degrees)
+  					new Vector(distanceFromMoonToSun, 0f)); //fully to the right 
+            world.add(moon);
+          
+          
 //        MObject mars = new MObject("mars",
 //					Color.RED, 
 //					15, 
@@ -65,8 +83,10 @@ public static void main(String args[]) {
 //					new Vector(-distanceFromSunm, 0f));  
 //          world.add(mars);
 
-          int drawEvery = 20000;
-          long count = 0; 
+          int drawEvery = 200;
+          long countLoop = 0;
+          long countOrbit = 0;
+          boolean belowSun = true;
           
           int screenCenterX = (int)(width / 2);
           int screenCenterY = (int)(height / 2);
@@ -87,12 +107,25 @@ public static void main(String args[]) {
 			  }
            
 					}
+				  
+				  if (earth.getPos().x > sun.getPos().x && !belowSun) {
+					  if (earth.getPos().y > sun.getPos().y) {
+						  countOrbit++;
+						  belowSun = true;
+					  }
+				  }
+				  else if (earth.getPos().y < sun.getPos().y) {
+					  belowSun = false;
+				  }
 
-				  if ((count % drawEvery) == 0) {
+				  if ((countLoop % drawEvery) == 0) {
 						Graphics g = wc.getGraphics();
 						g.setColor(Color.black);
 						g.fillRect(0, 0, wc.getWidth(), wc.getHeight());
-					  
+
+						g.setColor(Color.WHITE);
+						g.drawString("Orbits: " + countOrbit, 30, 30);
+
 					  for (MObject mo: world) {
 						  mo.draw(g, screenCenterX, screenCenterY, scale);
 						}
@@ -104,8 +137,8 @@ public static void main(String args[]) {
 				  }
        // System.out.println(dots.size());
 										
-					count++;
-					//Thread.sleep(10);
+					countLoop++;
+					//Thread.sleep(200);
 				}
 			}
 			finally {
