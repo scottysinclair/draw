@@ -28,22 +28,25 @@ public static void main(String args[]) {
 			final int width = 1366;
 			final int height = 768;
 
-      long speedOfEarthInKmpHour = 100000;
-      double speedOfEarthMetersPerSec = ((speedOfEarthInKmpHour * 1000 * 30));
-//speedOfEarthMetersPerSec = 0;
+
+	  double maxMagnitude = 0d;
+      long speedOfEarthInKmpHour = 105000;
+      double speedOfEarthMetersPerSec = ((speedOfEarthInKmpHour * 1000) * 30f);
+
       long distanceFromSunm = 149600000L * 1000L;
 
-
-      final double scale = height / (distanceFromSunm * 2.3); 
+      final double scale = height / (distanceFromSunm * 5.3); 
 
      WindowControl wc = new WindowControl(width, height);
    
 			// Create a window for full-screen mode; add a button to leave full-screen mode
+
 			try {
 
-        float dTime = 1f / 2; 
+        float dTime = 1f / 10000f; 
 
-        List<MObject> world = new LinkedList();
+        Map<String,Dot> dots = new HashMap<String,SolarSystem.Dot>();
+        List<MObject> world = new LinkedList<MObject>();
         MObject sun = new MObject("Sun", Color.YELLOW, 10, 1.9891e30, new Vector(0f, 0f), new Vector(0f, 0f)); 
         world.add(sun);
         MObject earth = new MObject("earth",
@@ -54,38 +57,55 @@ public static void main(String args[]) {
 					new Vector(distanceFromSunm, 0f)); //fully to the right 
           world.add(earth);
 
-        MObject mars = new MObject("mars",
-					Color.RED, 
-					15, 
-					5.97219e24, 
-					new Vector(0f, (-speedOfEarthMetersPerSec)), //going fully up or down (at 90 degrees)
-					new Vector(-distanceFromSunm, 0f));  
-          world.add(mars);
+//        MObject mars = new MObject("mars",
+//					Color.RED, 
+//					15, 
+//					5.97219e24, 
+//					new Vector(0f, (-speedOfEarthMetersPerSec)), //going fully up or down (at 90 degrees)
+//					new Vector(-distanceFromSunm, 0f));  
+//          world.add(mars);
 
-
+          int drawEvery = 20000;
+          long count = 0; 
+          
+          int screenCenterX = (int)(width / 2);
+          int screenCenterY = (int)(height / 2);
+          
 				while(true) {
-					Graphics g = wc.getGraphics();
-					g.setColor(Color.white);
-					g.fillRect(0, 0, wc.getWidth(), wc.getHeight());
-
- 					
 				  for (MObject mo: world) {
             mo.calc(world);
 					}
 
 				  for (MObject mo: world) {
             mo.update(dTime);
+			  if (mo == earth) {
+				  String key = mo.getDrawXPos(screenCenterX, scale) + "" +  mo.getDrawYPos(screenCenterY, scale);
+				  dots.put(key, new Dot(mo.getPos(), mo.getSpeed()));
+				  if (mo.getSpeed().magnitude() > maxMagnitude) {
+					  maxMagnitude = mo.getSpeed().magnitude();
+				  }
+			  }
+           
 					}
 
-				  for (MObject mo: world) {
-            mo.draw(g, (int)(width / 2), (int)(height / 2), scale);
-					}
-        
+				  if ((count % drawEvery) == 0) {
+						Graphics g = wc.getGraphics();
+						g.setColor(Color.black);
+						g.fillRect(0, 0, wc.getWidth(), wc.getHeight());
+					  
+					  for (MObject mo: world) {
+						  mo.draw(g, screenCenterX, screenCenterY, scale);
+						}
+					  for (Dot d: dots.values()) {
+						  d.draw(g, (int)(width / 2), (int)(height / 2), scale, maxMagnitude);
+					  }
+						g.dispose();
+						wc.show();
+				  }
+       // System.out.println(dots.size());
 										
-					g.dispose();
-					wc.show();
-					
-					Thread.sleep(10);
+					count++;
+					//Thread.sleep(10);
 				}
 			}
 			finally {
@@ -108,6 +128,43 @@ static class Vector {
     this.x = x;
     this.y = y;
   }
+  public Vector(Vector source) {
+	    this.x = source.x;
+	    this.y = source.y;
+	 }
+  
+  public double magnitude() {
+	  return Math.sqrt((x * x) + (y * y));
+  }
+}
+static Map<String,Color> cache = new HashMap<String, Color>();
+
+static class Dot {
+	final Vector pos;
+	final double speedMagnitude;
+	public Dot(Vector pos, Vector speed) {
+		this.pos = new Vector(pos);
+		this.speedMagnitude = speed.magnitude();
+	}
+	public void draw(Graphics gr, int xoff, int yoff, double scale, double maxMagnitude) {
+		double fracOfMagnitude =  speedMagnitude / maxMagnitude;
+		
+		int r = (int)Math.round(fracOfMagnitude * 255);
+		int g = 255 - r;
+		int b = 0;
+		String key = r + "" + g + "" +  b;
+		Color c = cache.get(key);
+		if (c == null) {
+			c = new Color(r, g, b);
+			cache.put(key, c);
+		}
+		gr.setColor(c);
+		gr.fillOval((xoff + (int)(pos.x * scale)), ((int)(yoff) + (int)(pos.y * scale)),  2, 2);
+	}
+	
+	public Vector getPos() {
+		return pos;
+	}
 }
 
 static class MObject {
@@ -127,8 +184,16 @@ static class MObject {
     this.speed = speed;
     this.pos = pos;
   }
+   
+  public Vector getPos() {
+	return pos;
+  }
+ 
+	public Vector getSpeed() {
+		return speed;
+	}
 
-  public void calc(Collection<MObject> world) {
+public void calc(Collection<MObject> world) {
      tf = new Vector();
      for (MObject mo: world) {
         if (mo == this) continue;
@@ -150,7 +215,7 @@ static class MObject {
      }
   }
   public void update(float dTime) {
-     print();
+   //  print();
      Vector a = new Vector(tf.x / mass, tf.y / mass);
      Vector dSpeed = new Vector(a.x * dTime, a.y * dTime);
      speed.x += dSpeed.x;
@@ -161,7 +226,17 @@ static class MObject {
 
   public void draw(Graphics g, int xoff, int yoff, double scale) {
      g.setColor(color);
-     g.fillOval(xoff + (int)(pos.x * scale), yoff + (int)(pos.y * scale), radius, radius);
+     g.fillOval(getDrawXPos(xoff, scale), getDrawYPos(yoff, scale), radius, radius);
+  }
+  
+  public int getDrawXPos(int xoff, double scale) {
+	  int x = xoff + (int)(pos.x * scale);
+	  return (int)(x - (radius / 2.0) + 0.5);
+  }
+
+  public int getDrawYPos(int yoff, double scale) {
+	  int y = yoff + (int)(pos.y * scale);
+	  return (int)(y - (radius / 2.0) + 0.5);
   }
 
   public void print() {
